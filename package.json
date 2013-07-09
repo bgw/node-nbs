@@ -1,0 +1,19 @@
+{
+    "name": "nbs",
+    "version": "0.0.0",
+    "author": "Benjamin Woodruff <benjaminwoodruff@ufl.edu>",
+    "description": "Make shelling out as easy as mere function calls",
+    "keywords": [
+        "sh",
+        "shell",
+        "unix",
+        "bash"
+    ],
+    "dependencies": {
+        "glob": "~3.2.1",
+        "lodash": "~1.3.1"
+    },
+    "engines": {
+        "node": ">=0.10"
+    }
+}
