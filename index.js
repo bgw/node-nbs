@@ -181,9 +181,9 @@ wrapperProto.defineSubcommands = function(subcommands) {
     var self = this;
     if(_.isPlainObject(subcommands)) {
         _.forOwn(subcommands, function(value, key) {
-            self[key] = self.partial(key);
+            self[camelize(key)] = self.partial(key);
             if(value) {
-                self[key].defineSubcommands(value);
+                self[camelize(key)].defineSubcommands(value);
             }
         });
     } else {
@@ -191,7 +191,7 @@ wrapperProto.defineSubcommands = function(subcommands) {
             subcommands = _.toArray(arguments);
         }
         _.each(subcommands, function(key) {
-            self[key] = self.partial(key);
+            self[camelize(key)] = self.partial(key);
         });
     }
     return this;
