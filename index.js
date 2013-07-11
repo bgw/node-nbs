@@ -114,7 +114,14 @@ wrapperProto.parseArgs = function(args) {
             }
         }
         // Transform `kwargs` and append onto `args`
-        args.push((key.length > 1 ? "--" : "-") + key + "=" + value);
+        var dasherizedKey = (key.length > 1 ? "--" : "-") + key;
+        if(_.isBoolean(value)) {
+            if(value) {
+                args.push(dasherizedKey);
+            }
+            return;
+        }
+        args.push(dasherizedKey + "=" + value);
     });
 
     // You can pass an array of arguments, such as in the case of `glob`
