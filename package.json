@@ -3,6 +3,7 @@
     "version": "0.0.0",
     "author": "Benjamin Woodruff <benjaminwoodruff@ufl.edu>",
     "description": "Make shelling out as easy as mere function calls",
+    "repository": "git://github.com/PiPeep/node-nbs.git",
     "keywords": [
         "sh",
         "shell",
