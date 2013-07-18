@@ -42,6 +42,20 @@ will return immediately and execute in parallel. [Libraries like
 `async`](https://github.com/caolan/async) or promises are good mechanisms for
 organizing this mayhem.
 
+### Argument Expansion
+
+Because `Function.apply` is needlessly ugly, you can simply pass arrays beside
+literal arguments.
+
+```javascript
+var myFolders = ["folderA", "folderB", "folderC"];
+mkdir("-p", "-v", myFolders);
+// which is the same as
+mkdir.apply(null, ["-p", "-v"].concat(myFolders));
+```
+
+You can even have nested lists, and they'll all be expanded upon evaluation.
+
 Partial Application
 -------------------
 
@@ -89,6 +103,67 @@ ls(function(err, result) {
 });
 // ["another_parent", "example_directory", ... ]
 ```
+
+Keyword Arguments
+-----------------
+
+As the last argument (before a callback), you may specify keyword arguments as
+an object. These keyword arguments get rewritten as follows:
+
+-   Single letter keys get a single dash prepended to them: `-s`
+-   Multi-letter keys get two dashes prepended to them: `--long`
+-   Integer values get converted to strings
+-   Boolean values trigger some special casing (see below)
+-   The value is appended after the key, separated by an equals sign:
+    `--key=value`
+
+### Boolean Keyword Arguments
+
+It makes sense to think of the keyword arguments as an "options argument".
+Fitting this analogy, keyword arguments with boolean values get processed
+differently:
+
+-   When true, the keyword gets one or two dashes prepended to it. No value is
+    written out.
+-   When false, the entire entry is ignored.
+
+As an example, the object
+
+```javascript
+{verbose: false, escape: true, color: false, literal: true, a: true}
+```
+
+Would translate into
+
+```
+--escape --literal -a
+```
+
+### Use with a callback
+
+The callback is **always the last** argument. As a result, the call remains
+readable with CoffeeScript syntax.
+
+```coffeescript
+ls = sh "ls"
+ls "-1", all: true, recursive: false, (err, res) ->
+    console.log res
+```
+
+### "Special" Keyword Arguments
+
+Keys prepended with an _underscore act a bit differently. The following special
+arguments are supported
+
+-   `_cwd`: Current working directory
+-   `_env`: An object of environment variables
+-   `_uid`: The numerical ID or the string username of the user to execute as
+-   `_gid`: The numerical ID or the string group of the user to execute as
+-   `_encoding`: If supplied, the encoding of stdout and stderr as a string.
+    [Any encoding node supports][] can be passed. If given a falsy value, such
+    as `null`, the stream will be treated as binary. Default is `utf8`.
+
+  [Any encoding node supports]: http://nodejs.org/api/stream.html#stream_readable_setencoding_encoding
 
 Even More Stuff
 ---------------

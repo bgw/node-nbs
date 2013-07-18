@@ -6,7 +6,7 @@ var _ = require("lodash"),
 var sh = function(command) {
     // Argument Parsing
     var partials = [].slice.call(arguments, 1),
-        partialKwargs = _.isObject(_.last(partials)) ? partials.pop() : {};
+        partialKwargs = _.isPlainObject(_.last(partials)) ? partials.pop() : {};
 
     var wrapperInstance = function() {
         wrapper.apply(wrapperInstance, _.toArray(arguments));
