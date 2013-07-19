@@ -103,8 +103,8 @@ var wrapper = function() {
             var stdoutStr = decode(stdoutData),
                 stderrStr = decode(stderrData);
 
-            // Treat non-zero exit codes as an error
-            if(exitCode !== 0) {
+            // Treat non-zero (or otherwise configured) exit codes as an error.
+            if(!_.contains(parsed.okCodes, exitCode)) {
                 return parsed.callback(
                     new sh.ExitCodeError(exitCode, stdoutStr, stderrStr)
                 );
@@ -146,7 +146,8 @@ wrapperProto.parseArgs = function(args) {
         callback = null,
         stdin = null,
         childProcessOptions = {},
-        encoding = "utf8";
+        encoding = "utf8",
+        okCodes = [0];
 
     // Handle piping like: `wc(ls("/etc", "-1"), "-l")`
     if(_.first(args) instanceof events.EventEmitter) {
@@ -180,6 +181,12 @@ wrapperProto.parseArgs = function(args) {
                 case "encoding":
                     encoding = value;
                     return;
+                case "okCode":
+                case "ok_code":
+                case "okCodes":
+                case "ok_codes":
+                    okCodes = _.isArray(value) ? value : [value];
+                    return;
                 default:
                     throw new Error("Unsupported '_special' keyword: " + key);
             }
@@ -207,7 +214,8 @@ wrapperProto.parseArgs = function(args) {
         callback: callback,
         stdin: stdin,
         childProcessOptions: childProcessOptions,
-        encoding: encoding
+        encoding: encoding,
+        okCodes: okCodes
     };
 };
 

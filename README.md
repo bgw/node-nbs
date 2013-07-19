@@ -159,9 +159,11 @@ arguments are supported
 -   `_env`: An object of environment variables
 -   `_uid`: The numerical ID or the string username of the user to execute as
 -   `_gid`: The numerical ID or the string group of the user to execute as
--   `_encoding`: If supplied, the encoding of stdout and stderr as a string.
-    [Any encoding node supports][] can be passed. If given a falsy value, such
-    as `null`, the stream will be treated as binary. Default is `utf8`.
+-   `_encoding`: The encoding of stdout and stderr as a string. [Any encoding
+    node supports][] can be passed. If given a falsy value, such as `null`, the
+    stream will be treated as binary. Default is `utf8`.
+-   `_okCode`: A number or array of numbers representing valid exit codes.
+    Defaults to `0`.
 
   [Any encoding node supports]: http://nodejs.org/api/stream.html#stream_readable_setencoding_encoding
 
