@@ -27,6 +27,17 @@ sh.glob = function(pattern, options) {
     return glob.sync(pattern, options);
 };
 
+sh.ExitCodeError = function(code, stdout, stderr) {
+    this.name = "sh.ExitCodeError";
+    this.code = code;
+    this.stdout = stdout;
+    this.stderr = stderr;
+    this.message = "Error Code: " + code + "\n" + strip(stderr);
+};
+
+sh.ExitCodeError.prototype = new Error();
+sh.ExitCodeError.constructor = sh.ExitCodeError;
+
 var wrapper = function() {
     var parsed = this.parseArgs(arguments),
         subprocess = childProcess.spawn(parsed.command, parsed.args);
@@ -39,28 +50,60 @@ var wrapper = function() {
         parsed.stdin.pipe(subprocess.stdin);
     }
     if(parsed.callback) {
-        var dataArray = [],
-            wasError = false;
-        // If we have an error, pass it to the `callback`, but also mark that
-        // there was an error, so that we can ignore the next `"end"` event.
+        var stdoutData = [],
+            stderrData = [],
+            errorObj = null,
+            exitCode = 0,
+            callbackCounter = 3; // Callbacks to wait for before exiting
+
+        // Decrement `callbackCounter`. Once the counter is zero, call our
+        // `parsed.callback` function.
+        var doCallback = function() {
+            if(--callbackCounter !== 0) {
+                // We're still waiting on some more information to come in
+                return;
+            }
+
+            // Error Handling
+            if(errorObj !== null) { return parsed.callback(err); }
+
+            // Decode stdout, stderr
+            var decode = function(data) {
+                if(parsed.encoding) { return data.join(""); }
+                else { return buffer.Buffer.concat(stdoutData); }
+            };
+            var stdoutStr = decode(stdoutData),
+                stderrStr = decode(stderrData);
+
+            // Treat non-zero exit codes as an error
+            if(exitCode !== 0) {
+                return parsed.callback(
+                    new ExitCodeError(exitCode, stdoutStr, stderrStr)
+                );
+            }
+
+            return parsed.callback(null, stdoutStr, stderrStr);
+        };
+
+        // Every subprocess should either error or exit.
         subprocess.on("error", function(err) {
-            wasError = true;
-            parsed.callback(err);
+            errorObj = err;
+            callbackCounter = 1; // Immediately call `parsed.callback`
+            doCallback();
         });
-        // If given a `callback`, we record the entire `stdout` from the
+        subprocess.on("exit", function(code, signal) {
+            exitCode = code;
+            doCallback();
+        });
+
+        // If given a `callback`, we record the output streams from the
         // subprocess and then feed it to the `callback` on exit. **There is no
         // limit to how much memory is allocated,** making using a callback
         // potentially unsafe.
-        subprocess.stdout.on("data", _.bind([].push, dataArray));
-        subprocess.stdout.on("end", function() {
-            if(wasError) {
-                return;
-            } else if(parsed.encoding) {
-                parsed.callback(null, dataArray.join(""));
-            } else {
-                parsed.callback(null, buffer.Buffer.concat(dataArray));
-            }
-        });
+        subprocess.stdout.on("data", _.bind([].push, stdoutData));
+        subprocess.stderr.on("data", _.bind([].push, stderrData));
+        subprocess.stdout.on("end", doCallback);
+        subprocess.stderr.on("end", doCallback);
     }
 };
 
@@ -215,6 +258,10 @@ var camelize = function(str) {
     });
     // Ensure we don't start with a capital letter
     return str.charAt(0).toLowerCase() + str.slice(1);
+};
+
+var strip = function(str) {
+    return str.replace(/^\s+|\s+$/g, "");
 };
 
 module.exports = sh;
