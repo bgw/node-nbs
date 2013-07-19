@@ -106,7 +106,7 @@ var wrapper = function() {
             // Treat non-zero exit codes as an error
             if(exitCode !== 0) {
                 return parsed.callback(
-                    new ExitCodeError(exitCode, stdoutStr, stderrStr)
+                    new sh.ExitCodeError(exitCode, stdoutStr, stderrStr)
                 );
             }
 

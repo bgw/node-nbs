@@ -24,3 +24,8 @@ ls(function(err, res) {
     console.log("$ " + ls);
     console.log(res);
 });
+
+sh("false")(function(err, res) {
+    console.log("$ " + false);
+    console.trace(err);
+});
