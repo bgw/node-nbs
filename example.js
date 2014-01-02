@@ -26,6 +26,17 @@ ls(function(err, res) {
 });
 
 sh("false")(function(err, res) {
-    console.log("$ " + false);
+    console.log("$ false");
     console.trace(err);
+    console.log();
 });
+
+// if node is run with `--harmony` or `--harmony-proxies`
+if(typeof Proxy !== "undefined") {
+    sh.git.status(function(err, res) {
+        console.log("$ git status # using harmony proxies");
+        console.log(res);
+    });
+} else {
+    console.log("$ # Run with `--harmony-proxies` to test proxy functionality");
+}

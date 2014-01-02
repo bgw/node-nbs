@@ -17,6 +17,13 @@ describe "defineSubcommands()", ->
         echo.should.have.property "mnOpQr"
         echo.should.have.property "stUvWx"
 
+    it "preserves multi-word arguments", ->
+        echo.defineSubcommands "ab-cd-ef", "--gh-ij-kl", "mn_op_qr", "stUvWx"
+        echo.should.have.property "ab-cd-ef"
+        echo.should.have.property "--gh-ij-kl"
+        echo.should.have.property "mn_op_qr"
+        echo.should.have.property "stUvWx"
+
     it "accepts an array of subcommands", ->
         echo.defineSubcommands ["wassup", "bro"]
         echo.should.have.property "wassup"
@@ -37,3 +44,9 @@ describe "defineSubcommands()", ->
             echo.abCdEf (err, res) ->
                 res.should.equal "ab-cd-ef"
                 done()
+
+    it "supports harmony proxy syntax", (done) ->
+        echo.onTheFly.proxied.subcommandGeneration (err, res) ->
+            if err then throw err
+            res.should.equal "on-the-fly proxied subcommand-generation"
+            done()

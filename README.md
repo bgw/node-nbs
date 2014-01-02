@@ -85,6 +85,51 @@ definitelyMyServer("sh", "evil_botnet_software.sh");
 // Please only use this on PHP websites
 ```
 
+### Subcommands
+
+Subcommands are a special case of partial application. `git` uses these heavily.
+We can define some of the common subcommands for `git` with the
+`defineSubcommands` function.
+
+```javascript
+var git = sh("git").defineSubcommands("status", "add", "rm", "clone");
+git.clone("https://github.com/PiPeep/node-nbs.git", "node-nbs");
+```
+
+A subcommand can be defined by a `--dashed-argument`, just pass it to
+`defineSubcommands`, and the dashes will be stripped and converted to
+`camelCase`.
+
+Some programs might use a tree of these subcommands, which can be accomplished
+by defining subcommands with and object. Arrays of subcommands can be
+intermingled, forming leaves, or falsy values can be provided to prune the tree.
+
+```javascript
+var sudo = sh("sudo");
+sudo.defineSubcommands({ls: null, git: ["status", "add", "rm"], echo: null});
+sudo.git.add("important_file.txt");
+```
+
+#### ES6 Harmony Proxy Syntax
+
+Having to make a call to `defineSubcommands` sucks, and there's no real reason
+(except a lack of language support) why the subcommands should ever have to be
+explicitly predefined.
+
+The next version of JS adds [object Proxies][]. These allow us to intercept
+accesses to an underlying object. If you enable proxies by passing
+`--harmony-proxies` or `--harmony` to `node`, then you can use some alternate
+syntax. Eventually this proposed language feature should be enabled by default
+in future versions of node.
+
+  [object Proxies]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+
+```javascript
+sh.ssh["pipeep@b.enjam.info"].git.rm("important_file.txt");
+```
+
+Take *that*, ES5!
+
 Callbacks
 ---------
 
@@ -103,6 +148,9 @@ ls(function(err, result) {
 });
 // ["another_parent", "example_directory", ... ]
 ```
+
+**Warning:** All calls resulting in shell execution are asynchronous, so there's
+no way to catch errors or control execution flow without a callback.
 
 Keyword Arguments
 -----------------

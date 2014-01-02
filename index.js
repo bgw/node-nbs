@@ -3,7 +3,34 @@ var _ = require("lodash"),
     events = require("events"),
     buffer = require("buffer");
 
-var sh = function(command) {
+// We'll use the proxy API if available
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
+//     Global_Objects/Proxy
+// or the old proxy API if the new one isn't supported
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Old_Proxy_API
+var proxyCreate = (function() {
+    if(typeof Proxy !== "undefined") {
+        var ProxyShim = require("harmony-proxy")
+        return function(target, handler) {
+            return new ProxyShim(target, handler);
+        };
+    }
+    return function(target, handler) {
+        return target;
+    };
+})();
+
+// `harmony-proxy` seems to have issues unless we explicity define these
+var proxyFunctionBase = {
+    apply: function(target, self, args) {
+        return target.apply(self, args);
+    },
+    construct: function(target, args) {
+        return new (Function.prototype.bind.apply(target, args))();
+    }
+};
+
+var sh = proxyCreate(function(command) {
     // Argument Parsing
     var partials = [].slice.call(arguments, 1),
         partialKwargs = _.isPlainObject(_.last(partials)) ? partials.pop() : {};
@@ -11,13 +38,39 @@ var sh = function(command) {
     var wrapperInstance = function() {
         wrapper.apply(wrapperInstance, _.toArray(arguments));
     };
+
     _.extend(wrapperInstance, {
         command: command,
         partials: partials,
         partialKwargs: partialKwargs
-    });
-    return _.extend(wrapperInstance, wrapperProto);
-};
+    }, wrapperProto);
+
+    if("Proxy" in global) {
+        wrapperInstance = proxyCreate(wrapperInstance, wrapperProxyHandler);
+    }
+
+    return wrapperInstance;
+}, _.defaults({
+    has: function(target, name) {
+        return true;
+    },
+    get: function(target, name) {
+        return name in target ?
+            target[name] :
+            target(dasherize(name));
+    }
+}, proxyFunctionBase));
+
+var wrapperProxyHandler = _.defaults({
+    has: function(target, name) {
+        return true;
+    },
+    get: function(target, name) {
+        return name in target ?
+            target[name] :
+            target.partial(dasherize(name));
+    }
+}, proxyFunctionBase);
 
 // Uses `glob.sync` to expand a patterned argument. For example,
 // `sh.glob("*.js")` would return an array of all JavaScript files in the
@@ -192,7 +245,7 @@ wrapperProto.parseArgs = function(args) {
             }
         }
         // Transform `kwargs` and append onto `args`
-        var dasherizedKey = (key.length > 1 ? "--" : "-") + key;
+        var dasherizedKey = (key.length > 1 ? "--" : "-") + dasherize(key);
         if(_.isBoolean(value)) {
             if(value) {
                 args.push(dasherizedKey);
@@ -277,7 +330,7 @@ wrapperProto.defineSubcommands = function(subcommands) {
             subcommands = _.toArray(arguments);
         }
         _.each(subcommands, function(key) {
-            self[camelize(key)] = self.partial(key);
+            self[key] = self[camelize(key)] = self.partial(key);
         });
     }
     return this;
@@ -295,6 +348,13 @@ var camelize = function(str) {
     // Ensure we don't start with a capital letter
     return str.charAt(0).toLowerCase() + str.slice(1);
 };
+
+// Based loosely on `underscore.string`'s `dasherize`
+var dasherize = function(str) {
+    return str.indexOf("-") >= 0 || str.indexOf("_") >= 0?
+        str :
+        str.replace(/([A-Z])/g, '-$1').replace(/[-_\s]+/g, '-').toLowerCase();
+}
 
 var strip = function(str) {
     return str.replace(/^\s+|\s+$/g, "");
