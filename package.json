@@ -1,9 +1,9 @@
 {
     "name": "nbs",
     "version": "0.0.0",
-    "author": "Benjamin Woodruff <benjaminwoodruff@ufl.edu>",
+    "author": "Benjamin Woodruff <npm@benjam.info>",
     "description": "Make shelling out as easy as mere function calls",
-    "repository": "git://github.com/PiPeep/node-nbs.git",
+    "repository": "git://github.com/bgw/node-nbs.git",
     "keywords": [
         "sh",
         "shell",
@@ -11,18 +11,19 @@
         "bash"
     ],
     "dependencies": {
-        "glob": "~3.2.1",
-        "lodash": "~1.3.1",
-        "harmony-proxy": "~0.0.2"
+        "glob": "^6.0.1",
+        "lodash": "^3.10.1",
+        "harmony-proxy": "^0.1.0"
     },
     "devDependencies": {
-        "mocha": "~1.12.0",
-        "should": "~1.2.2",
-        "coffee-script": "1.x"
+        "mocha": "^2.3.4",
+        "should": "^7.1.1",
+        "coffee-script": "^1.10.0"
     },
     "scripts": {
         "test": "./node_modules/mocha/bin/mocha --harmony-proxies"
     },
+    "license": "BSD-2-Clause",
     "engines": {
         "node": ">=0.10"
     }

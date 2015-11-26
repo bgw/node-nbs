@@ -1,3 +1,4 @@
+require("should")
 sh = require("../index.js")
 echo = sh("echo", "-n")
 
@@ -6,9 +7,9 @@ describe "defineSubcommands()", ->
     it "defines new functions", ->
         echo.defineSubcommands "something", "another"
         echo.should.have.property "something"
-        echo.something.should.be.a "function"
+        echo.something.should.be.a.Function()
         echo.should.have.property "another"
-        echo.another.should.be.a "function"
+        echo.another.should.be.a.Function()
 
     it "transforms multi-word arguments", ->
         echo.defineSubcommands "ab-cd-ef", "--gh-ij-kl", "mn_op_qr", "stUvWx"
