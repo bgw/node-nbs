@@ -1,3 +1,4 @@
 --compilers coffee:coffee-script/register
+--require source-map-support/register
 --reporter spec
 --ui bdd
