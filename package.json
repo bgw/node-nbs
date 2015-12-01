@@ -1,6 +1,6 @@
 {
   "name": "scallop",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "author": "Benjamin Woodruff <npm@benjam.info>",
   "description": "Make shelling out as easy as mere function calls",
   "repository": "git://github.com/bgw/scallop.git",

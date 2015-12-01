@@ -6,6 +6,10 @@ Scallop
 Shelling out with `child_process` is just ... so ... drab. Relieve the tedium
 with `scallop`!
 
+```sh
+$ npm i --save-dev scallop
+```
+
 ```javascript
 var sh = require("scallop"),
     curl = sh("curl", {silent: true});
