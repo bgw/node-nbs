@@ -1,11 +1,13 @@
-node-nbs
-========
+Scallop
+=======
+
+![](https://raw.githubusercontent.com/bgw/scallop/master/logo.png)
 
 Shelling out with `child_process` is just ... so ... drab. Relieve the tedium
-with `nbs`!
+with `scallop`!
 
 ```javascript
-var sh = require("nbs"),
+var sh = require("scallop"),
     curl = sh("curl", {silent: true});
 curl("http://httpbin.org/user-agent", function(err, result) {
     console.log(JSON.parse(result)["user-agent"]); // curl/7.30.0
@@ -93,7 +95,7 @@ We can define some of the common subcommands for `git` with the
 
 ```javascript
 var git = sh("git").defineSubcommands("status", "add", "rm", "clone");
-git.clone("https://github.com/PiPeep/node-nbs.git", "node-nbs");
+git.clone("https://github.com/bgw/scallop.git", "scallop");
 ```
 
 A subcommand can be defined by a `--dashed-argument`, just pass it to
@@ -125,7 +127,7 @@ in future versions of node.
   [object Proxies]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 ```javascript
-sh.ssh["pipeep@b.enjam.info"].git.rm("important_file.txt");
+sh.ssh["bgw@benjam.info"].git.rm("important_file.txt");
 ```
 
 Take *that*, ES5!
@@ -232,11 +234,6 @@ has a significant market share.
 See Also
 --------
 
-`nbs` is based on the python module, `sh` by Andrew Moffat. [`sh` is hosted on
-GitHub.](http://amoffat.github.io/sh/) I even lifted some examples from his
+`scallop` is based on the python module, `sh` by Andrew Moffat. [`sh` is hosted
+on GitHub.](http://amoffat.github.io/sh/) I even lifted some examples from his
 documentation!
-
-`nbs` would be called `sh`, but that name [was already taken by another project
-with some similar goals.](http://shjs.tuton.fr/) It's worth checking out too
-(although *my* project is *clearly* better). `nbs`'s name is derived from `sh`'s
-former name, `pbs`.
