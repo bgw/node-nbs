@@ -23,8 +23,6 @@
     "coffee-script": "^1.10.0",
     "eslint": "^1.10.2",
     "eslint-config-bgw": "^1.0.0",
-    "eslint-config-standard": "^4.4.0",
-    "eslint-plugin-standard": "^1.3.1",
     "mocha": "^2.3.4",
     "should": "^7.1.1",
     "source-map-support": "^0.3.3"
