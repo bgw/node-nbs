@@ -5,6 +5,7 @@ const events = require('events');
 const buffer = require('buffer');
 const glob = require('glob');
 const {proxyCreate} = require('./proxy');
+const ExitCodeError = require('./ExitCodeError').default;
 
 const sh = proxyCreate((program, ...partials) => {
   // Argument Parsing
@@ -54,45 +55,6 @@ sh.glob = function(pattern, options) {
   return glob.sync(pattern, options);
 };
 
-sh.ExitCodeError = function(code, stdout, stderr) {
-  this.name = 'sh.ExitCodeError';
-  this.code = code;
-  this.codeDescription = sh.exitCodeDescriptions['' + code];
-  this.stdout = stdout;
-  this.stderr = stderr;
-    // Try to give something human-friendly.
-  this.message = 'Error Code: ' + code +
-        // Attach the `codeDescription` if there is one.
-        (this.codeDescription ? (' (' + this.codeDescription + ')') : '') +
-        // Any contents of stderr that exist could be useful
-        strip(stderr) ? ('\n' + strip(stderr)) : '';
-};
-
-sh.ExitCodeError.prototype = new Error();
-sh.ExitCodeError.constructor = sh.ExitCodeError;
-
-// Try to describe some return codes: http://stackoverflow.com/q/1101957
-sh.exitCodeDescriptions = {
-  1: 'general error',
-  2: 'misuse of shell builtin',
-  64: 'command line usage error',
-  65: 'data format error',
-  66: 'cannot open input',
-  67: 'addressee unknown',
-  68: 'host name unknown',
-  69: 'service unavailable',
-  70: 'internal software error',
-  71: "system error (e.g., can't fork)",
-  72: 'critical OS file missing',
-  73: "can't create (user) output file",
-  74: 'input/output error',
-  75: 'temp failure; user is invited to retry',
-  76: 'remote error in protocol',
-  77: 'permission denied',
-  78: 'configuration error',
-  255: 'exit status out of range',
-};
-
 function wrapper(...args) {
   const parsed = this.parseArgs(...args);
   const subprocess = childProcess.spawn(parsed.program, parsed.args);
@@ -134,7 +96,7 @@ function wrapper(...args) {
       // Treat non-zero (or otherwise configured) exit codes as an error.
       if (!parsed.okCodes.includes(exitCode)) {
         return parsed.callback(
-          new sh.ExitCodeError(exitCode, stdoutStr, stderrStr)
+          new ExitCodeError(exitCode, stdoutStr, stderrStr)
         );
       }
 
@@ -326,10 +288,6 @@ function dasherize(str) {
   return str.indexOf('-') >= 0 || str.indexOf('_') >= 0 ?
     str :
     str.replace(/([A-Z])/g, '-$1').replace(/[-_\s]+/g, '-').toLowerCase();
-}
-
-function strip(str) {
-  return str.replace(/^\s+|\s+$/g, '');
 }
 
 module.exports = sh;
