@@ -12,8 +12,8 @@
   ],
   "dependencies": {
     "glob": "^6.0.1",
-    "lodash": "^3.10.1",
-    "harmony-proxy": "^0.1.0"
+    "harmony-reflect": "^1.4.2",
+    "lodash": "^3.10.1"
   },
   "devDependencies": {
     "babel-cli": "^6.2.0",

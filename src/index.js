@@ -3,35 +3,9 @@ const childProcess = require('child_process');
 const events = require('events');
 const buffer = require('buffer');
 const glob = require('glob');
+const {proxyCreate} = require('./proxy');
 
-// We'll use the proxy API if available
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/
-//     Global_Objects/Proxy
-// or the old proxy API if the new one isn't supported
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Old_Proxy_API
-const proxyCreate = (function() {
-  if (typeof Proxy !== 'undefined') {
-    const ProxyShim = require('harmony-proxy');
-    return function _proxyCreate(target, handler) {
-      return new ProxyShim(target, handler);
-    };
-  }
-  return function _proxyCreate(target, handler) {
-    return target;
-  };
-})();
-
-// `harmony-proxy` seems to have issues unless we explicity define these
-const proxyFunctionBase = {
-  apply(target, self, args) {
-    return target.apply(self, args);
-  },
-  construct(target, args) {
-    return new (Function.prototype.bind.apply(target, args))();
-  },
-};
-
-const sh = proxyCreate(function(command) {
+const sh = proxyCreate(function _sh(command) {
   // Argument Parsing
   const partials = [].slice.call(arguments, 1);
   const partialKwargs = _.isPlainObject(_.last(partials)) ? partials.pop() : {};
@@ -48,7 +22,7 @@ const sh = proxyCreate(function(command) {
   }
 
   return wrapperInstance;
-}, _.defaults({
+}, {
   has(target, name) {
     return true;
   },
@@ -57,9 +31,9 @@ const sh = proxyCreate(function(command) {
       target[name] :
       target(dasherize(name));
   },
-}, proxyFunctionBase));
+});
 
-const wrapperProxyHandler = _.defaults({
+const wrapperProxyHandler = {
   has(target, name) {
     return true;
   },
@@ -68,7 +42,7 @@ const wrapperProxyHandler = _.defaults({
       target[name] :
       target.partial(dasherize(name));
   },
-}, proxyFunctionBase);
+};
 
 // Uses `glob.sync` to expand a patterned argument. For example,
 // `sh.glob("*.js")` would return an array of all JavaScript files in the
