@@ -1,3 +1,4 @@
+require('babel-polyfill');
 const _ = require('lodash');
 const childProcess = require('child_process');
 const events = require('events');
@@ -5,9 +6,8 @@ const buffer = require('buffer');
 const glob = require('glob');
 const {proxyCreate} = require('./proxy');
 
-const sh = proxyCreate(function _sh(command) {
+const sh = proxyCreate((program, ...partials) => {
   // Argument Parsing
-  const partials = [].slice.call(arguments, 1);
   const partialKwargs = _.isPlainObject(_.last(partials)) ? partials.pop() : {};
   let wrapperInstance;
 
@@ -15,7 +15,9 @@ const sh = proxyCreate(function _sh(command) {
     // late binding
     wrapper.apply(wrapperInstance, args);
   };
-  _.extend(wrapperInstance, {command, partials, partialKwargs}, wrapperProto);
+  Object.assign(wrapperInstance,
+    {program, partials, partialKwargs}, wrapperProto
+  );
 
   if (typeof Proxy !== 'undefined') {
     wrapperInstance = proxyCreate(wrapperInstance, wrapperProxyHandler);
@@ -93,7 +95,7 @@ sh.exitCodeDescriptions = {
 
 function wrapper(...args) {
   const parsed = this.parseArgs(...args);
-  const subprocess = childProcess.spawn(parsed.command, parsed.args);
+  const subprocess = childProcess.spawn(parsed.program, parsed.args);
   if (parsed.encoding) {
     subprocess.stdout.setEncoding(parsed.encoding);
     subprocess.stderr.setEncoding(parsed.encoding);
@@ -130,7 +132,7 @@ function wrapper(...args) {
       const stderrStr = decode(stderrData);
 
       // Treat non-zero (or otherwise configured) exit codes as an error.
-      if (!_.contains(parsed.okCodes, exitCode)) {
+      if (!parsed.okCodes.includes(exitCode)) {
         return parsed.callback(
           new sh.ExitCodeError(exitCode, stdoutStr, stderrStr)
         );
@@ -174,11 +176,11 @@ wrapperProto.parseArgs = function(...args) {
   let okCodes = [0];
 
   // Handle piping like: `wc(ls("/etc", "-1"), "-l")`
-  if (_.first(args) instanceof events.EventEmitter) {
+  if (args[0] instanceof events.EventEmitter) {
     stdin = args.shift().stdout;
   }
 
-  if (_.isFunction(_.last(args))) {
+  if (typeof _.last(args) === 'function') {
     callback = args.pop();
   }
 
@@ -187,12 +189,13 @@ wrapperProto.parseArgs = function(...args) {
   }
 
   // Extend `args` and `kwargs` with `this.partials` and `this.partialKwargs`
-  [].unshift.apply(args, this.partials);
-  _.defaults(kwargs, this.partialKwargs);
+  args.unshift(...this.partials);
+  kwargs = {...this.partialKwargs, ...kwargs};
 
   // Handle kwargs and all its edge-cases
-  _.forOwn(kwargs, (value, key) => {
-        // Keyword arguments starting with an underscore are "special"
+  for (let key of Object.keys(kwargs)) {
+    const value = kwargs[key];
+    // Keyword arguments starting with an underscore are "special"
     if (key.charAt(0) === '_') {
       key = key.slice(1);
       switch (key) {
@@ -201,39 +204,39 @@ wrapperProto.parseArgs = function(...args) {
         case 'uid':
         case 'gid':
           childProcessOptions[key] = value;
-          return;
+          continue;
         case 'encoding':
           encoding = value;
-          return;
+          continue;
         case 'okCode':
         case 'ok_code':
         case 'okCodes':
         case 'ok_codes':
-          okCodes = _.isArray(value) ? value : [value];
-          return;
+          okCodes = Array.isArray(value) ? value : [value];
+          continue;
         default:
-          throw new Error("Unsupported '_special' keyword: " + key);
+          throw new Error(`Unsupported '_special' keyword: ${key}`);
       }
     }
     // Transform `kwargs` and append onto `args`
     const dasherizedKey = (key.length > 1 ? '--' : '-') + dasherize(key);
-    if (_.isBoolean(value)) {
+    if (typeof value === 'boolean') {
       if (value) {
         args.push(dasherizedKey);
       }
-      return;
+    } else {
+      args.push(`${dasherizedKey}=${value}`);
     }
-    args.push(dasherizedKey + '=' + value);
-  });
+  }
 
   // You can pass an array of arguments, such as in the case of `glob`
   args = _.flatten(args);
 
   // Ensure all values in `args` are strings
-  args = _.map(args, a => '' + a);
+  args = args.map(a => '' + a);
 
   return {
-    command: this.command,
+    program: this.program,
     args,
     callback,
     stdin,
@@ -245,9 +248,9 @@ wrapperProto.parseArgs = function(...args) {
 
 wrapperProto.toString = function() {
   const parsed = this.parseArgs();
-  const command = parsed.command;
+  const program = parsed.program;
   const args = parsed.args;
-  return _.map([command].concat(args), a =>
+  return [program].concat(args).map(a =>
     // Quote some things (Doesn't handle everything, but this is good enough for
     // logging).
     a.search(/[\s\$'";]/) >= 0 ?
@@ -268,8 +271,10 @@ wrapperProto.toString = function() {
 //     example("hostname"); // "example.com"
 wrapperProto.partial = wrapperProto.bake = function(...args) {
   const kwargs = _.isPlainObject(_.last(args)) ? args.pop() : {};
-  _.defaults(kwargs, this.partialKwargs);
-  return sh(this.command, ...this.partials, ...args, kwargs);
+  return sh(this.program,
+    ...this.partials, ...args,
+    {...this.partialKwargs, ...kwargs}
+  );
 };
 
 // It's handy to predefine different subcommands for some tools, such as `git`.
@@ -287,19 +292,20 @@ wrapperProto.partial = wrapperProto.bake = function(...args) {
 // in `camelCase`. eg. `git get-tar-commit-id` becomes `git.getTarCommitId()`
 wrapperProto.defineSubcommands = function(subcommands) {
   if (_.isPlainObject(subcommands)) {
-    _.forOwn(subcommands, (value, key) => {
+    for (const key of Object.keys(subcommands)) {
+      const value = subcommands[key];
       this[camelize(key)] = this.partial(key);
       if (value) {
         this[camelize(key)].defineSubcommands(value);
       }
-    });
-  } else {
-    if (!_.isArray(subcommands)) {
-      subcommands = _.toArray(arguments);
     }
-    _.each(subcommands, key => {
+  } else {
+    if (!Array.isArray(subcommands)) {
+      subcommands = [...arguments];
+    }
+    for (const key of subcommands) {
       this[key] = this[camelize(key)] = this.partial(key);
-    });
+    }
   }
   return this;
 };

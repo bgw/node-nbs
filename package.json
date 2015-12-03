@@ -11,6 +11,7 @@
     "bash"
   ],
   "dependencies": {
+    "babel-polyfill": "^6.2.0",
     "glob": "^6.0.1",
     "harmony-reflect": "^1.4.2",
     "lodash": "^3.10.1"
