@@ -1,10 +1,18 @@
-Scallop
-=======
+<p align="center">
+  <a href="https://github.com/bgw/scallop">
+    <img src="https://raw.githubusercontent.com/bgw/scallop/master/logo.png"
+         width="120px" alt="">
+  </a>
+</p>
 
-![](https://raw.githubusercontent.com/bgw/scallop/master/logo.png)
+<h1 align="center">Scallop</h1>
 
-Shelling out with `child_process` is just ... so ... drab. Relieve the tedium
-with `scallop`!
+<p align="center">
+  Shelling out with <code>child_process</code> is so&hellip; drab.
+  <br>Relieve the tedium with <code>scallop</code>!
+</p>
+
+--------------------------------------------------------------------------------
 
 ```sh
 $ npm i --save-dev scallop
