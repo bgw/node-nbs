@@ -40,9 +40,3 @@ describe "partial application", ->
                     "--bar=buzz", "--yep=nope", "-f=fizz", "-n=5", "literal"
                 ]).should.be.true
                 done()
-
-    describe "the bake function", ->
-
-        it "is an alias for the partial function", ->
-            echo = sh "echo"
-            echo.bake.should.equal echo.partial

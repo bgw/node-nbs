@@ -170,11 +170,8 @@ wrapperProto.parseArgs = function(...args) {
         case 'encoding':
           encoding = value;
           continue;
-        case 'okCode':
-        case 'ok_code':
         case 'okCodes':
-        case 'ok_codes':
-          okCodes = Array.isArray(value) ? value : [value];
+          okCodes = value;
           continue;
         default:
           throw new Error(`Unsupported '_special' keyword: ${key}`);
@@ -231,7 +228,7 @@ wrapperProto.toString = function() {
 //
 //     const example = sh("ssh", "example.com", {p: 1234});
 //     example("hostname"); // "example.com"
-wrapperProto.partial = wrapperProto.bake = function(...args) {
+wrapperProto.partial = function(...args) {
   const kwargs = _.isPlainObject(_.last(args)) ? args.pop() : {};
   return sh(this.program,
     ...this.partials, ...args,
