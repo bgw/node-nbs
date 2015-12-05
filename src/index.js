@@ -10,21 +10,15 @@ const ExitCodeError = require('./ExitCodeError').default;
 const sh = proxyCreate((program, ...partials) => {
   // Argument Parsing
   const partialKwargs = _.isPlainObject(_.last(partials)) ? partials.pop() : {};
-  let wrapperInstance;
 
-  wrapperInstance = function(...args) {
+  let commandInstance = Object.assign((...args) => {
     // late binding
-    wrapper.apply(wrapperInstance, args);
-  };
-  Object.assign(wrapperInstance,
-    {program, partials, partialKwargs}, wrapperProto
-  );
+    command.apply(commandInstance, args);
+  }, {program, partials, partialKwargs}, commandProto);
 
-  if (typeof Proxy !== 'undefined') {
-    wrapperInstance = proxyCreate(wrapperInstance, wrapperProxyHandler);
-  }
+  commandInstance = proxyCreate(commandInstance, commandProxyHandler);
 
-  return wrapperInstance;
+  return commandInstance;
 }, {
   has(target, name) {
     return true;
@@ -36,7 +30,7 @@ const sh = proxyCreate((program, ...partials) => {
   },
 });
 
-const wrapperProxyHandler = {
+const commandProxyHandler = {
   has(target, name) {
     return true;
   },
@@ -55,7 +49,7 @@ sh.glob = function(pattern, options) {
   return glob.sync(pattern, options);
 };
 
-function wrapper(...args) {
+function command(...args) {
   const parsed = this.parseArgs(...args);
   const subprocess = childProcess.spawn(parsed.program, parsed.args);
   if (parsed.encoding) {
@@ -124,12 +118,12 @@ function wrapper(...args) {
   }
 }
 
-// Functions to append onto the generated `wrapper` function
-const wrapperProto = {};
+// Functions to append onto the generated `command` function
+const commandProto = {};
 
-// Parses `...args` the way `wrapper` would, returning an object with all the
+// Parses `...args` the way `command` would, returning an object with all the
 // processed data.
-wrapperProto.parseArgs = function(...args) {
+commandProto.parseArgs = function(...args) {
   let kwargs = {};
   let callback = null;
   let stdin = null;
@@ -205,7 +199,7 @@ wrapperProto.parseArgs = function(...args) {
   };
 };
 
-wrapperProto.toString = function() {
+commandProto.toString = function() {
   const parsed = this.parseArgs();
   const program = parsed.program;
   const args = parsed.args;
@@ -228,7 +222,7 @@ wrapperProto.toString = function() {
 //
 //     const example = sh("ssh", "example.com", {p: 1234});
 //     example("hostname"); // "example.com"
-wrapperProto.partial = function(...args) {
+commandProto.partial = function(...args) {
   const kwargs = _.isPlainObject(_.last(args)) ? args.pop() : {};
   return sh(this.program,
     ...this.partials, ...args,
@@ -249,7 +243,7 @@ wrapperProto.partial = function(...args) {
 //
 // If given a subcommand with dashes or underscores, the resulting API will be
 // in `camelCase`. eg. `git get-tar-commit-id` becomes `git.getTarCommitId()`
-wrapperProto.defineSubcommands = function(subcommands) {
+commandProto.defineSubcommands = function(subcommands) {
   if (_.isPlainObject(subcommands)) {
     for (const key of Object.keys(subcommands)) {
       const value = subcommands[key];
