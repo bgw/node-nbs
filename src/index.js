@@ -63,49 +63,20 @@ function command(...args) {
   if (parsed.callback) {
     const stdoutData = [];
     const stderrData = [];
-    let errorObj = null;
-    let exitCode = 0;
-    let callbackCounter = 3; // Callbacks to wait for before exiting
-
-    // Decrement `callbackCounter`. Once the counter is zero, call our
-    // `parsed.callback` function.
-    function doCallback() {
-      if (--callbackCounter !== 0) {
-        // We're still waiting on some more information to come in
-        return null;
-      }
-
-      // Error Handling
-      if (errorObj !== null) { return parsed.callback(errorObj); }
-
-      // Decode stdout, stderr
-      function decode(data) {
-        return parsed.encoding ?
-          data.join('') :
-          buffer.Buffer.concat(stdoutData);
-      }
-      const stdoutStr = decode(stdoutData);
-      const stderrStr = decode(stderrData);
-
-      // Treat non-zero (or otherwise configured) exit codes as an error.
-      if (!parsed.okCodes.includes(exitCode)) {
-        return parsed.callback(
-          new ExitCodeError(exitCode, stdoutStr, stderrStr)
-        );
-      }
-
-      return parsed.callback(null, stdoutStr, stderrStr);
+    function decodeData(data) {
+      return parsed.encoding ?
+        data.join('') :
+        buffer.Buffer.concat(data);
     }
-
-    // Every subprocess should either error or exit.
-    subprocess.on('error', err => {
-      errorObj = err;
-      callbackCounter = 1; // Immediately call `parsed.callback`
-      doCallback();
+    const stdoutPromise = new Promise((resolve, reject) => {
+      subprocess.stdout.on('end', () => {
+        resolve(decodeData(stdoutData));
+      });
     });
-    subprocess.on('exit', (code, signal) => {
-      exitCode = code;
-      doCallback();
+    const stderrPromise = new Promise((resolve, reject) => {
+      subprocess.stderr.on('end', () => {
+        resolve(decodeData(stderrData));
+      });
     });
 
     // If given a `callback`, we record the output streams from the subprocess
@@ -113,8 +84,28 @@ function command(...args) {
     // much memory is allocated,** making using a callback potentially unsafe.
     subprocess.stdout.on('data', d => stdoutData.push(d));
     subprocess.stderr.on('data', d => stderrData.push(d));
-    subprocess.stdout.on('end', doCallback);
-    subprocess.stderr.on('end', doCallback);
+
+    // Every subprocess should either error or exit.
+    const exitPromise = new Promise((resolve, reject) => {
+      subprocess.on('error', err => {
+        reject(err);
+      });
+      subprocess.on('exit', (code, signal) => {
+        resolve(code);
+      });
+    });
+
+    const p = Promise.all([stdoutPromise, stderrPromise, exitPromise]);
+    p.then(([stdoutStr, stderrStr, exitCode]) => {
+      // Treat non-zero (or otherwise configured) exit codes as an error.
+      if (!parsed.okCodes.includes(exitCode)) {
+        throw new ExitCodeError(exitCode, stdoutStr, stderrStr);
+      }
+
+      parsed.callback(null, stdoutStr, stderrStr);
+    }).catch(err => {
+      parsed.callback(err);
+    });
   }
 }
 
