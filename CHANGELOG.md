@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0 (December 5th, 2015)
+
+- Remove `bake()`, `_okCode`, `_ok_code`, and `_ok_codes`
+- `_okCodes` now must be an array, not a number
+- Fix a bug with binary stderr results getting set to the binary stdout results
+- Fix missing `lib` directory in npm package
+- Add an npm `prepublish` script
+- Internal cleanup
+
 ## 0.0.2 (December 5th, 2015)
 
 - Internal cleanup
