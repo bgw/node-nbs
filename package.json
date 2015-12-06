@@ -31,7 +31,8 @@
   "scripts": {
     "lint": "eslint .",
     "build": "babel src --out-dir lib --source-maps",
-    "test": "npm run lint && npm run build && mocha --harmony-proxies"
+    "test": "npm run lint && npm run build && mocha --harmony-proxies",
+    "prepublish": "npm run build"
   },
   "license": "BSD-2-Clause",
   "engines": {
