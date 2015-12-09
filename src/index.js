@@ -6,6 +6,7 @@ const buffer = require('buffer');
 const glob = require('glob');
 const {proxyCreate} = require('./proxy');
 const ExitCodeError = require('./ExitCodeError').default;
+const {camelize, dasherize} = require('./string.js');
 
 const scallop = proxyCreate((program, ...partials) => {
   // Argument Parsing
@@ -253,23 +254,5 @@ commandProto.defineSubcommands = function(subcommands) {
   }
   return this;
 };
-
-
-// Helper functions
-// ----------------
-
-// Based loosely on `underscore.string`'s `camelize`
-function camelize(str) {
-  str = str.replace(/[-_\s]+(.)?/g, (match, c) => (c ? c.toUpperCase() : ''));
-    // Ensure we don't start with a capital letter
-  return str.charAt(0).toLowerCase() + str.slice(1);
-}
-
-// Based loosely on `underscore.string`'s `dasherize`
-function dasherize(str) {
-  return str.indexOf('-') >= 0 || str.indexOf('_') >= 0 ?
-    str :
-    str.replace(/([A-Z])/g, '-$1').replace(/[-_\s]+/g, '-').toLowerCase();
-}
 
 module.exports = scallop;
