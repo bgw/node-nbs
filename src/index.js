@@ -1,12 +1,13 @@
-require('babel-polyfill');
-const _ = require('lodash');
-const childProcess = require('child_process');
-const events = require('events');
-const buffer = require('buffer');
-const glob = require('glob');
-const {proxyCreate} = require('./proxy');
-const ExitCodeError = require('./ExitCodeError').default;
-const {camelize, dasherize} = require('./string.js');
+import 'babel-polyfill';
+import _ from 'lodash';
+import childProcess from 'child_process';
+import events from 'events';
+import buffer from 'buffer';
+import glob from 'glob';
+
+import {proxyCreate} from './proxy';
+import ExitCodeError from './ExitCodeError';
+import {camelize, dasherize} from './string';
 
 const scallop = proxyCreate((program, ...partials) => {
   // Argument Parsing
