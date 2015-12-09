@@ -7,7 +7,7 @@ const glob = require('glob');
 const {proxyCreate} = require('./proxy');
 const ExitCodeError = require('./ExitCodeError').default;
 
-const sh = proxyCreate((program, ...partials) => {
+const scallop = proxyCreate((program, ...partials) => {
   // Argument Parsing
   const partialKwargs = _.isPlainObject(_.last(partials)) ? partials.pop() : {};
 
@@ -42,10 +42,10 @@ const commandProxyHandler = {
 };
 
 // Uses `glob.sync` to expand a patterned argument. For example,
-// `sh.glob("*.js")` would return an array of all JavaScript files in the
+// `scallop.glob("*.js")` would return an array of all JavaScript files in the
 // current directory. A [list of options can be found on the node-glob github
 // page](https://github.com/isaacs/node-glob#options).
-sh.glob = function(pattern, options) {
+scallop.glob = function(pattern, options) {
   return glob.sync(pattern, options);
 };
 
@@ -206,16 +206,16 @@ commandProto.toString = function() {
 // Wouldn't it be cool to "bake in" some arguments to a command? How about a
 // version of `ssh` specifically for your server?
 //
-//     const example = sh("ssh").partial("example.com", {p: 1234});
+//     const example = scallop("ssh").partial("example.com", {p: 1234});
 //     example("hostname"); // "example.com"
 //
-// Alternatively, you can apply partial arguments straight to `sh`:
+// Alternatively, you can apply partial arguments straight to `scallop`:
 //
-//     const example = sh("ssh", "example.com", {p: 1234});
+//     const example = scallop("ssh", "example.com", {p: 1234});
 //     example("hostname"); // "example.com"
 commandProto.partial = function(...args) {
   const kwargs = _.isPlainObject(_.last(args)) ? args.pop() : {};
-  return sh(this.program,
+  return scallop(this.program,
     ...this.partials, ...args,
     {...this.partialKwargs, ...kwargs}
   );
@@ -272,4 +272,4 @@ function dasherize(str) {
     str.replace(/([A-Z])/g, '-$1').replace(/[-_\s]+/g, '-').toLowerCase();
 }
 
-module.exports = sh;
+module.exports = scallop;
