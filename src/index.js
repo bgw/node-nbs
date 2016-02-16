@@ -13,10 +13,10 @@ const scallop = proxyCreate((program, ...partials) => {
   // Argument Parsing
   const partialKwargs = _.isPlainObject(_.last(partials)) ? partials.pop() : {};
 
-  let commandInstance = Object.assign((...args) => {
+  let commandInstance = Object.assign((...args) => (
     // late binding
-    command.apply(commandInstance, args);
-  }, {program, partials, partialKwargs}, commandProto);
+    command.apply(commandInstance, args)
+  ), {program, partials, partialKwargs}, commandProto);
 
   commandInstance = proxyCreate(commandInstance, commandProxyHandler);
 
@@ -58,11 +58,11 @@ function command(...args) {
     subprocess.stdout.setEncoding(parsed.encoding);
     subprocess.stderr.setEncoding(parsed.encoding);
   }
-  if (parsed.stdin) {
-    // Pipe from passed in `ChildProcess` to our stdin
-    parsed.stdin.pipe(subprocess.stdin);
-  }
-  if (parsed.callback) {
+
+  // We lazily construct this 'real' promise only if we're not piping. If we're
+  // piping we don't want to execute this code at all because of the overhead of
+  // storing the entire program output as a string.
+  async function promiseFactory() {
     const stdoutData = [];
     const stderrData = [];
     function decodeData(data) {
@@ -81,9 +81,8 @@ function command(...args) {
       });
     });
 
-    // If given a `callback`, we record the output streams from the subprocess
-    // and then feed it to the `callback` on exit. **There is no limit to how
-    // much memory is allocated,** making using a callback potentially unsafe.
+    // TODO: There is no limit to how much memory is allocated, making this
+    // potentially unsafe.
     subprocess.stdout.on('data', d => stdoutData.push(d));
     subprocess.stderr.on('data', d => stderrData.push(d));
 
@@ -97,18 +96,41 @@ function command(...args) {
       });
     });
 
-    const p = Promise.all([stdoutPromise, stderrPromise, exitPromise]);
-    p.then(([stdoutStr, stderrStr, exitCode]) => {
-      // Treat non-zero (or otherwise configured) exit codes as an error.
-      if (!parsed.okCodes.includes(exitCode)) {
-        throw new ExitCodeError(exitCode, stdoutStr, stderrStr);
-      }
+    const [stdoutStr, stderrStr, exitCode] =
+      await Promise.all([stdoutPromise, stderrPromise, exitPromise]);
 
-      parsed.callback(null, stdoutStr, stderrStr);
-    }).catch(err => {
-      parsed.callback(err);
-    });
+    // Treat non-zero (or otherwise configured) exit codes as an error.
+    if (!parsed.okCodes.includes(exitCode)) {
+      throw new ExitCodeError(exitCode, stdoutStr, stderrStr);
+    }
+
+    return [stdoutStr, stderrStr];
   }
+
+  let realPromise = null;
+  return Object.assign(
+    // make a thenable, and convert it to a real promise
+    Promise.resolve({
+      then(...thenArgs) {
+        if (realPromise === null) {
+          realPromise = promiseFactory();
+        }
+        return realPromise.then(...thenArgs);
+      },
+    }),
+    {
+      pipe(nextCommand) {
+        this.stdout.pipe(nextCommand.stdin);
+      },
+      pipeErr(nextCommand) {
+        this.stderr.pipe(nextCommand.stdin);
+      },
+      stdin: subprocess.stdin,
+      stdout: subprocess.stdout,
+      stderr: subprocess.stderr,
+      pid: subprocess.pid,
+    },
+  );
 }
 
 // Functions to append onto the generated `command` function
@@ -118,7 +140,6 @@ const commandProto = {};
 // processed data.
 commandProto.parseArgs = function(...args) {
   let kwargs = {};
-  let callback = null;
   let stdin = null;
   const childProcessOptions = {};
   let encoding = 'utf8';
@@ -127,10 +148,6 @@ commandProto.parseArgs = function(...args) {
   // Handle piping like: `wc(ls("/etc", "-1"), "-l")`
   if (args[0] instanceof events.EventEmitter) {
     stdin = args.shift().stdout;
-  }
-
-  if (typeof _.last(args) === 'function') {
-    callback = args.pop();
   }
 
   if (_.isPlainObject(_.last(args))) {
@@ -184,7 +201,6 @@ commandProto.parseArgs = function(...args) {
   return {
     program: this.program,
     args,
-    callback,
     stdin,
     childProcessOptions,
     encoding,
@@ -256,4 +272,6 @@ commandProto.defineSubcommands = function(subcommands) {
   return this;
 };
 
+// this export has both commonjs *and* babel 6 interop
+scallop.default = scallop;
 module.exports = scallop;

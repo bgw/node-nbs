@@ -1,43 +1,44 @@
-/* eslint-disable no-console, handle-callback-err */
-const sh = require('./lib/index.js');
-const git = sh('git');
-const curl = sh('curl', {silent: true});
-const ls = sh('ls', '-1');
+/* eslint-disable no-console */
+const scallop = require('./lib/index.js');
+const git = scallop('git');
+const curl = scallop('curl', {silent: true});
+const ls = scallop('ls', '-1');
 
-git.defineSubcommands('status', 'add', 'rm', 'clone');
+(async () => {
+  git.defineSubcommands('status', 'add', 'rm', 'clone');
+  let out, err;
+  void err; // silence eslint about this not being used anywhere yet
 
-git.status((err, res) => {
   console.log('$ git status');
-  console.log(res);
-});
+  [out, err] = await git.status();
+  console.log(out);
 
-git.status('-s', (err, res) => {
   console.log('$ git status -s');
-  console.log(res);
-});
+  [out, err] = await git.status('-s');
+  console.log(out);
 
-curl('http://httpbin.org/user-agent', (err, res) => {
   console.log("$ curl --silent 'http://httpbin.org/user-agent'");
-  console.log(res);
-});
+  [out, err] = await curl('http://httpbin.org/user-agent');
+  console.log(out);
 
-ls((err, res) => {
   console.log('$ ' + ls);
-  console.log(res);
-});
+  [out, err] = await ls();
+  console.log(out);
 
-sh('false')((err, res) => {
   console.log('$ false');
-  console.trace(err);
-  console.log();
-});
+  try {
+    [out, err] = await scallop('false')();
+  } catch (ex) {
+    console.trace(ex);
+    console.log();
+  }
 
-// if node is run with `--harmony` or `--harmony-proxies`
-if (typeof Proxy !== 'undefined') {
-  sh.git.status((err, res) => {
+  // if node is run with `--harmony` or `--harmony-proxies`
+  if (typeof Proxy !== 'undefined') {
     console.log('$ git status # using harmony proxies');
-    console.log(res);
-  });
-} else {
-  console.log('$ # Run with `--harmony-proxies` to test proxy functionality');
-}
+    [out, err] = await scallop.git.status();
+    console.log(out);
+  } else {
+    console.log('$ # Run with `--harmony-proxies` to test proxy functionality');
+  }
+})();

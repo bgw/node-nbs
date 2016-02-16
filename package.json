@@ -1,6 +1,6 @@
 {
   "name": "scallop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Benjamin Woodruff <npm@benjam.info>",
   "description": "Make shelling out as easy as mere function calls",
   "repository": "git://github.com/bgw/scallop.git",
@@ -11,26 +11,26 @@
     "bash"
   ],
   "dependencies": {
-    "babel-polyfill": "^6.2.0",
-    "glob": "^6.0.1",
-    "harmony-reflect": "^1.4.2",
-    "lodash": "^3.10.1"
+    "babel-polyfill": "^6.5.0",
+    "glob": "^7.0.0",
+    "harmony-reflect": "^1.4.2"
   },
   "devDependencies": {
-    "babel-cli": "^6.2.0",
-    "babel-eslint": "^4.1.6",
-    "babel-preset-es2015": "^6.1.18",
-    "babel-preset-stage-2": "^6.1.18",
-    "coffee-script": "^1.10.0",
-    "eslint": "^1.10.2",
-    "eslint-config-bgw": "^1.0.0",
-    "mocha": "^2.3.4",
-    "should": "^7.1.1",
-    "source-map-support": "^0.3.3"
+    "babel-cli": "^6.5.1",
+    "babel-eslint": "^5.0.0-beta10",
+    "babel-plugin-transform-runtime": "^6.5.2",
+    "babel-preset-es2015": "^6.5.0",
+    "babel-preset-stage-2": "^6.5.0",
+    "eslint": "^2.1.0",
+    "eslint-config-bgw": "^3.0.0",
+    "eslint-plugin-babel": "^3.1.0",
+    "mocha": "^2.4.5",
+    "should": "^8.2.2",
+    "source-map-support": "^0.4.0"
   },
   "scripts": {
     "lint": "eslint .",
-    "build": "babel src --out-dir lib --source-maps",
+    "build": "babel src --out-dir lib",
     "test": "npm run lint && npm run build && mocha --harmony-proxies",
     "prepublish": "npm run build"
   },

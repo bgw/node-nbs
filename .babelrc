@@ -3,5 +3,9 @@
     "es2015",
     "stage-2"
   ],
-  "sourceRoot": "src"
+  "plugins": [
+    "transform-runtime"
+  ],
+  "sourceRoot": "src",
+  "sourceMaps": true
 }

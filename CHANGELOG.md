@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (February 15th, 2016)
+
+- Convert exposed API from callbacks to promises
+- Convert all unit tests from coffeescript to JS
+- Update to Babel 6 (and some other dependency updates)
+- Some internal refactoring
+
 ## 0.1.0 (December 5th, 2015)
 
 - Remove `bake()`, `_okCode`, `_ok_code`, and `_ok_codes`

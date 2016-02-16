@@ -22,9 +22,10 @@ $ npm i --save-dev scallop
 const scallop = require('scallop');
 const curl = scallop('curl', {silent: true});
 
-curl('http://httpbin.org/user-agent', (err, result) => {
-  console.log(JSON.parse(result)['user-agent']); // curl/7.30.0
-});
+(async () => {
+  const [out] = await curl('http://httpbin.org/user-agent');
+  console.log(JSON.parse(out)['user-agent']); // curl/7.30.0
+})():
 // Of course this is a horribly contrived example. You should use `http.get`.
 ```
 
@@ -147,33 +148,37 @@ scallop.ssh['bgw@benjam.info'].git.rm('important_file.txt');
 
 Take *that*, ES5!
 
-Callbacks
----------
+Promises
+--------
 
-Because the output of commands is **occasionally useful**, I guess it might be
-**moderately interesting** if there was some way to read them. The easiest way
-is with a callback.
+The output of commands is communicated using promises.
 
 ```javascript
-const _s = require('underscore.string');
 const ls = scallop('ls', '-1');
-ls((err, result) => {
-  if (err) {
-    throw err; // Oh my god! Something horrible must have happened!
-  }
-  console.log(_s.strip(result).split('\n'));
-});
+
+ls('test_dir')
+  .then(([stdout, stderr]) => {
+    console.log(stdout.trim().split('\n'));
+  })
+  .catch((ex) => {
+    console.trace(ex);
+  });
+
 // ['another_parent', 'example_directory', ... ]
 ```
 
-**Warning:** All calls resulting in shell execution are asynchronous, so there's
-no way to catch errors or control execution flow without a callback.
+This becomes more natural when paired with ES2016 async/await syntax.
+
+```javascript
+const [stdout, stderr] = await ls('test_dir');
+console.log(stdout.trim().split('\n'));
+```
 
 Keyword Arguments
 -----------------
 
-As the last argument (before a callback), you may specify keyword arguments as
-an object. These keyword arguments get rewritten as follows:
+As the last argument you may specify keyword arguments as an object. These
+keyword arguments get rewritten as follows:
 
 -   Single letter keys get a single dash prepended to them: `-s`
 -   Multi-letter keys get two dashes prepended to them: `--long`
@@ -202,24 +207,6 @@ Would translate into
 
 ```
 --escape --literal -a
-```
-
-### Use with a callback
-
-The callback is **always the last** argument. As a result, the call remains
-readable with coffescript or ES2015 arrow function syntax.
-
-```coffeescript
-ls = sh 'ls'
-ls '-1', all: true, recursive: false, (err, res) ->
-  console.log res
-```
-
-```js
-ls = sh('ls');
-ls('-1', {all: true, recursive: false}, (err, res) => {
-  console.log(res);
-});
 ```
 
 ### "Special" Keyword Arguments
