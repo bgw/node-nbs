@@ -215,9 +215,9 @@ commandProto.toString = function() {
   return [program].concat(args).map(a =>
     // Quote some things (Doesn't handle everything, but this is good enough for
     // logging).
-    a.search(/[\s\$'";]/) >= 0 ?
+    a.search(/[\s$'";]/) >= 0 ?
       "'" + a + "'" :
-      a
+      a,
   ).join(' ');
 };
 
@@ -235,7 +235,7 @@ commandProto.partial = function(...args) {
   const kwargs = _.isPlainObject(_.last(args)) ? args.pop() : {};
   return scallop(this.program,
     ...this.partials, ...args,
-    {...this.partialKwargs, ...kwargs}
+    {...this.partialKwargs, ...kwargs},
   );
 };
 

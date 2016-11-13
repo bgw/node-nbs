@@ -11,27 +11,27 @@
     "bash"
   ],
   "dependencies": {
-    "babel-polyfill": "^6.5.0",
-    "glob": "^7.0.0",
-    "harmony-reflect": "^1.4.2"
+    "babel-polyfill": "^6.16.0",
+    "glob": "^7.1.1",
+    "harmony-reflect": "^1.5.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.5.1",
-    "babel-eslint": "^5.0.0-beta10",
-    "babel-plugin-transform-runtime": "^6.5.2",
-    "babel-preset-es2015": "^6.5.0",
-    "babel-preset-stage-2": "^6.5.0",
-    "eslint": "^2.1.0",
+    "babel-cli": "^6.18.0",
+    "babel-eslint": "^7.1.0",
+    "babel-plugin-transform-runtime": "^6.15.0",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-stage-2": "^6.18.0",
+    "eslint": "^3.10.0",
     "eslint-config-bgw": "^3.0.0",
-    "eslint-plugin-babel": "^3.1.0",
-    "mocha": "^2.4.5",
-    "should": "^8.2.2",
-    "source-map-support": "^0.4.0"
+    "eslint-plugin-babel": "^3.3.0",
+    "mocha": "^3.1.2",
+    "should": "^11.1.1",
+    "source-map-support": "^0.4.6"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint --fix .",
     "build": "babel src --out-dir lib",
-    "test": "npm run lint && npm run build && mocha --harmony-proxies",
+    "test": "npm run lint && npm run build && mocha",
     "prepublish": "npm run build"
   },
   "license": "BSD-2-Clause",
